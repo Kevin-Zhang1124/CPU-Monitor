@@ -5,21 +5,47 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CPU_Monitor"
         mc:Ignorable="d"
-        Title="CPU Monitor" Height="400" Width="350">
+        Title="CPU Monitor" Height="400" Width="350"
+        WindowStyle="None"
+        ResizeMode="NoResize">
     <Grid>
+
+        <Grid.Resources>
+            <ResourceDictionary>
+                <ResourceDictionary.MergedDictionaries>
+                    <ResourceDictionary Source="Styles.xaml"/>
+                </ResourceDictionary.MergedDictionaries>
+            </ResourceDictionary>
+        </Grid.Resources>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="20"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="CPU Monitor" HorizontalAlignment="Center" FontSize="20" Margin="5"/>
+        <Grid Grid.Row="0">
+            <TextBlock Grid.Row="0" Text="CPU Monitor" HorizontalAlignment="Center" FontSize="20" Margin="5"/>
+            <!-- 退出按钮 -->
+            <Button Style="{StaticResource CloseButtonStyle}"
+                Height="30"
+                Width="30"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Content="×"
+                FontSize="15"
+                Grid.Column="1"
+                Margin="0,0,0,0"
+                Click="CloseButton_Click"/>
+        </Grid>
 
         <StackPanel Grid.Row="2" Margin="20">
             <TextBlock Text="CPU Temperature:"/>
             <TextBlock Text="{Binding CpuTemperature, StringFormat={}{0:F1}°C}"
                       HorizontalAlignment="Center"/>
+            <ProgressBar Minimum="0" Maximum="100" 
+                        Value="{Binding CpuTemperature}"
+                        Height="20" Margin="0,5"/>
             
             <TextBlock Text="CPU Power:" Margin="0,10,0,0"/>
             <TextBlock Text="{Binding CpuPower, StringFormat={}{0:F1} W}"
@@ -28,6 +54,19 @@
             <TextBlock Text="GPU Frequency:" Margin="0,10,0,0"/>
             <TextBlock Text="{Binding GpuFrequency, StringFormat={}{0:F1} MHZ}"
                        HorizontalAlignment="Center"/>
+
+            <TextBlock Text="CPU Voltage:" Margin="0,10,0,0"/>
+            <TextBlock Text="{Binding CpuVoltage, StringFormat={}{0:F1} V}"
+                       HorizontalAlignment="Center"/>
+
+            <TextBlock Text="CPU Usage:" Margin="0,10,0,0"/>
+            <TextBlock Text="{Binding CpuUsage, StringFormat={}{0:F1} %}"
+                       HorizontalAlignment="Center"/>
+
+            <TextBlock Text="CPU Current:" Margin="0,10,0,0"/>
+            <TextBlock Text="{Binding CpuCurrent, StringFormat={}{0:F1} A}"
+                       HorizontalAlignment="Center"/>
+            
         </StackPanel>
 
     </Grid>
