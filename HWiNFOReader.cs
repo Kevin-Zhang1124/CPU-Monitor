@@ -11,17 +11,20 @@ using System.Windows;
 namespace HWiNFOReaderServices
 {
     /// <summary>
-    /// 传感器读数数据结构 (sensor reading data structure)
+    /// 传感器读数数据结构 sensor reading data structure
     /// </summary>
     public class HWiNFOData
     {
         public float? CpuTemperature { get; set; }
         public float? CpuPower { get; set; }
         public float? GpuFrequency { get; set; }
+        public float? CpuVoltage { get; set; }
+        public float? CpuUsage { get; set; }
+        public float? CpuCurrent { get; set; }
     }
 
     /// <summary>
-    /// HWiNFO共享内存读取器 (HWiNFO shared memory reader)
+    /// HWiNFO共享内存读取器 HWiNFO shared memory reader
     /// </summary>
     public class HWiNFOReader : IDisposable
     {
@@ -43,14 +46,14 @@ namespace HWiNFOReaderServices
             SENSOR_TYPE_FREQUENCY,
             SENSOR_TYPE_USAGE,
             SENSOR_TYPE_OTHER,
-            SENSOR_TYPE_UTILIZATION
+            SENSOR_TYPE_CLOCK,
         };
 
-        // HWiNFO共享内存头部签名（固定值）(HWiNFO shared memory header signature) (fixed value)
+        // HWiNFO共享内存头部签名（固定值）HWiNFO shared memory header signature
         private const uint HWINFO_SIGNATURE = 0x004F494D; // "HWiNFO"的十六进制表示
 
         /// <summary>
-        /// 共享内存头部结构（必须与HWiNFO严格对齐）(shared memory header structure) (must match with HWiNFO)
+        /// 共享内存头部结构（必须与HWiNFO严格对齐）shared memory header structure
         /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
         public struct HWiNFO_SENSORS_HEADER
@@ -69,7 +72,7 @@ namespace HWiNFOReaderServices
         };
 
         /// <summary>
-        /// 传感器条目结构 (sensor entry structure)
+        /// 传感器条目结构 sensor entry structure
         /// </summary>
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct SensorEntry
@@ -83,7 +86,7 @@ namespace HWiNFOReaderServices
         };
 
         /// <summary>
-        /// 读数条目结构 (reading entry structure)
+        /// 读数条目结构 reading entry structure
         /// </summary>
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct ReadingEntry
@@ -106,7 +109,7 @@ namespace HWiNFOReaderServices
         public event Action<HWiNFOData> DataUpdated;
 
         /// <summary>
-        /// 启动共享内存监视 (start shared memory monitoring) 
+        /// 启动共享内存监视 start shared memory monitor
         /// </summary>
         public void Start()
         {
@@ -141,7 +144,8 @@ namespace HWiNFOReaderServices
 
         private bool IsCpuSensor(SensorEntry sensor)
         {
-            string[] keywords = { "CPU", "Core", "Package", "Clock", "Frequency", "Usage", "Utilization", };
+            string[] keywords = { "CPU", "Core", "Package", "Clock", "Frequency", "Usage", 
+                                  "Utilization", "Processor", "Load", "Temp", "Power", "Total", "Used" };
             return keywords.Any(k =>
                 sensor.szSensorNameUser.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0 ||
                 sensor.szSensorNameOrig.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0
@@ -149,7 +153,7 @@ namespace HWiNFOReaderServices
         }
 
         /// <summary>
-        /// 数据读取核心方法 (core method of reading data)
+        /// 数据读取核心方法 core method of data reading 
         /// </summary>
         private void ReadData(object state)
         {
@@ -159,11 +163,11 @@ namespace HWiNFOReaderServices
             {
                 using (var accessor = _mmf.CreateViewAccessor(0, Marshal.SizeOf(typeof(HWiNFO_SENSORS_HEADER)), MemoryMappedFileAccess.Read))
                 {
-                    // 1. 读取并验证头部 (read and validate header)
+                    // 1. 读取并验证头部 read and verify header
                     HWiNFO_SENSORS_HEADER header;
                     accessor.Read(0, out header);
 
-                    // 2. 遍历传感器条目 (iterate over the sensor entries)
+                    // 2. 遍历传感器条目 go through sensor entries
                     var sensors = new List<SensorEntry>();
                     for (int i = 0; i < header.dwNumSensorElements; i++)
                     {
@@ -178,7 +182,7 @@ namespace HWiNFOReaderServices
                         sensors.Add(Sensor);
                     }
 
-                    // 3. 读取所有读数 (read all readings)
+                    // 3. 读取所有读数 read all readings
                     var readings = new List<ReadingEntry>();
                     for (int j = 0; j < header.dwNumReadingElements; j++)
                     {
@@ -194,31 +198,46 @@ namespace HWiNFOReaderServices
                         readings.Add(Reading);
                     }
 
-                    // 4. 提取CPU数据 (extract CPU data)
+                    // 4. 提取CPU数据 obtain CPU data
                     var data = new HWiNFOData();
                     foreach (var reading in readings)
                     {
                         var sensor = sensors[(int)reading.dwSensorIndex];
                         if (!IsCpuSensor(sensor)) continue;
 
-                        // 提取CPU温度 (extract CPU temperature)
+                        // 提取CPU温度 obtain CPU temperature
                         if (reading.tReading == HWiNFOReader.SENSOR_READING_TYPE.SENSOR_TYPE_TEMP)
                         {
                             data.CpuTemperature = (float?)reading.Value;
                         }
-                        // 提取CPU功率 (extract CPU power)
+                        // 提取CPU功率 obtain CPU power
                         else if (reading.tReading == HWiNFOReader.SENSOR_READING_TYPE.SENSOR_TYPE_POWER)
                         {
                             data.CpuPower = (float?)reading.Value;
                         }
-                        // 提取GPU频率 (extract GPU frequency)
+                        // 提取GPU频率  obtain GPU frequency
                         else if (reading.tReading == HWiNFOReader.SENSOR_READING_TYPE.SENSOR_TYPE_FREQUENCY)
                         {
                             data.GpuFrequency = (float?)reading.Value;
                         }
+                        // 提取CPU电压 obtain CPU velocity
+                        else if (reading.tReading == HWiNFOReader.SENSOR_READING_TYPE.SENSOR_TYPE_VOLT)
+                        {
+                            data.CpuVoltage = (float?)reading.Value;
+                        }
+                        // 提取CPU核心使用率 obtain CPU core usage
+                        else if (reading.tReading == HWiNFOReader.SENSOR_READING_TYPE.SENSOR_TYPE_USAGE)
+                        {
+                            data.CpuUsage = (float?)reading.Value;
+                        }
+                        // 提取CPU风扇 obtain CPU fan
+                        else if (reading.tReading == HWiNFOReader.SENSOR_READING_TYPE.SENSOR_TYPE_CURRENT)
+                        {
+                            data.CpuCurrent = (float?)reading.Value;
+                        }
                     }
 
-                    // 5. 触发事件
+                    // 5. 触发事件 toggle event
                     DataUpdated?.Invoke(data);
                 }
             }
@@ -229,7 +248,7 @@ namespace HWiNFOReaderServices
         }
 
         /// <summary>
-        /// 释放资源 (release resource)
+        /// 释放资源 release resource
         /// </summary>
         public void Dispose()
         {
