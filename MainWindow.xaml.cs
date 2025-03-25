@@ -26,6 +26,9 @@ namespace CPU_Monitor
                     _vm.CpuTemperature = data.CpuTemperature;
                     _vm.CpuPower = data.CpuPower;
                     _vm.GpuFrequency = data.GpuFrequency;
+                    _vm.CpuVoltage = data.CpuVoltage;
+                    _vm.CpuUsage = data.CpuUsage;
+                    _vm.CpuCurrent = data.CpuCurrent;
                 });
             };
             _reader.Start();
@@ -36,5 +39,13 @@ namespace CPU_Monitor
             _reader.Dispose();
             base.OnClosing(e);
         }
+
+
+        // 退出按钮点击事件
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
     }
 }
