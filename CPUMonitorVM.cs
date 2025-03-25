@@ -13,6 +13,9 @@ namespace CPU_Monitor
         private float? _cpuTemp;
         private float? _cpuPower;
         private float? _gpuFrequency;
+        private float? _cpuVoltage;
+        private float? _cpuUsage;
+        private float? _cpuCurrent;
 
         public float? CpuTemperature
         {
@@ -32,6 +35,25 @@ namespace CPU_Monitor
             set => SetField(ref _gpuFrequency, value);
         }
 
+        public float? CpuVoltage
+        {
+            get => _cpuVoltage;
+            set => SetField(ref _cpuVoltage, value);
+        }
+
+        public float? CpuUsage
+        {
+            get => _cpuUsage;
+            set => SetField(ref _cpuUsage ,value);
+        }
+
+        public float? CpuCurrent
+        {
+            get => _cpuCurrent;
+            set => SetField(ref _cpuCurrent, value);
+        }
+
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string propertyName = null)
@@ -40,7 +62,7 @@ namespace CPU_Monitor
         }
 
         /// <summary>
-        /// 通用属性设置方法 (common property setting method)
+        /// 通用属性设置方法
         /// </summary>
         protected bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
